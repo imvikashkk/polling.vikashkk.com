@@ -31,13 +31,13 @@ export const PollHistoryPage = () => {
           </div>
         ) : (
           <div className="space-y-12">
-            {history.map((poll, pollIndex) => {
+            {history.map((poll) => {
               const totalVotes = poll.totalVotes;
               return (
                 <div key={poll.pollId}>
                   <div>
                     <h2 className="text-[22px] font-semibold leading-[90%]">
-                      Question {history.length - pollIndex}
+                      Question
                     </h2>
                     <p>{new Date(poll.createdAt).toLocaleString()}</p>
                   </div>
