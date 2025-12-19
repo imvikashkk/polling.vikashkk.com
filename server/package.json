@@ -1,0 +1,32 @@
+{
+  "name": "live-polling-backend",
+  "version": "1.0.0",
+  "description": "Live Polling System Backend",
+  "main": "dist/app.js",
+  "type": "module",
+  "scripts": {
+    "dev": "tsx --watch --env-file=.env src/app.ts",
+    "build": "tsc",
+    "start": "node --env-file=.env dist/app.js",
+    "lint": "eslint . --ext .ts",
+    "lint:fix": "eslint . --ext .ts --fix"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.6",
+    "@types/node": "^25.0.3",
+    "eslint": "^9.39.2",
+    "tsx": "^4.21.0",
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.50.0"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^5.2.1",
+    "socket.io": "^4.8.1",
+    "uuid": "^13.0.0"
+  }
+}
