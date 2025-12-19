@@ -63,21 +63,13 @@ export const StudentsList: React.FC<StudentsListProps> = ({ students }) => {
                   </div>
 
                   {userRole === 'teacher' && (
-                    <button
-                      onClick={() => {
-                        if (
-                          confirm(
-                            `Are you sure you want to remove ${student.name}?`
-                          )
-                        ) {
-                          handleKick(student.id, student.name);
-                        }
-                      }}
+                    <div
+                      onClick={() => handleKick(student.id, student.name)}
                       className="text-[18px] underline font-semibold text-[#1D68BD] cursor-pointer"
                       title="Remove student"
                     >
                       Kick Out
-                    </button>
+                    </div>
                   )}
                 </div>
               </div>

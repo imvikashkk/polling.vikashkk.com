@@ -61,20 +61,13 @@ export default function StudentPage() {
           </span>
         </div>
 
-        <div className="mt-7.5 w-165 h-25.75 gap-6.5 opacity-100 text-center">
+        <div className="mt-7.5 w-150 h-25.75 gap-6.5 opacity-100 text-center">
           <h1 className=" opacity-100  font-normal text-[40px] text-center text-black">
-            {`Let's `}
-            <span className=" font-semibold text-[40px]  text-center">
-              Get Started
-            </span>
+            {`You’ve been Kicked out !`}
           </h1>
           <p className="opacity-100  font-normal text-[19px] leading-[110%] text-center text-black/50">
-            If you&apos;re a student, you&apos;ll be able to{' '}
-            <span style={{ fontWeight: 600, color: '#000000' }}>
-              submit your answers
-            </span>
-            , participate in live polls, and see how your responses compare with
-            your classmates
+            Looks like the teacher had removed you from the poll system .Please
+            Try again sometime.
           </p>
         </div>
       </div>
@@ -275,6 +268,7 @@ export default function StudentPage() {
     );
   }
 
+  /* After Answer */
   return (
     <div className="min-h-screen bg-white flex items-center justify-center flex-col p-4">
       <div>
