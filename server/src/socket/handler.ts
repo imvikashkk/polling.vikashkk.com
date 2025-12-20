@@ -19,11 +19,11 @@ export const setupSocketHandlers = (io: Server) => {
 
     /* ===============================
        TEACHER → START / OVERRIDE SESSION
-       
        Ye handler tab call hota hai jab teacher join karta hai.
        Agar already koi teacher hai, to purane wale ko kick out kar dega.
        Ye "acquire" behavior hai jo tumne manga tha.
     =============================== */
+
     socket.on('start-session', ({ name }: { name: string }) => {
       // Agar already session active hai, to force reset kar do
       if (RoomManager.hasActiveSession()) {
@@ -38,10 +38,12 @@ export const setupSocketHandlers = (io: Server) => {
 
         // Session ko end kar ke naya start karna
         RoomManager.endSession();
+        RoomManager.clearHistory(); // Pahle clear kar lete hai history ko
         io.to(RoomManager.SESSION_ID).emit('session-ended');
       }
 
       // Naya session start karo
+      RoomManager.clearHistory(); // Pahle clear kar lete hai history ko
       RoomManager.startSession(socket.id, name);
       socket.join(RoomManager.SESSION_ID);
 

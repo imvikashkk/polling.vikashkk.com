@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
 import { useAppSelector } from '@/store';
 import { useSocketActions } from '@/hooks/useSocketAction';
@@ -17,10 +17,7 @@ import {
   selectTimeRemainingFormatted,
 } from '@/store/slices/pollSlice';
 import { selectAllStudentsAnswered } from '@/store/slices/sessionSlice';
-import {
-  selectUserName,
-  selectIsTeacherReplaced,
-} from '@/store/slices/userSlice';
+import { selectUserName } from '@/store/slices/userSlice';
 
 import { ChatPopup } from '@/componnets/shared/ChatPopup';
 
@@ -29,8 +26,7 @@ import { v4 as uuidv4 } from 'uuid';
 export default function TeacherPage() {
   const [teacherName, setTeacherName] = useState('');
 
-  const { startSession, createPoll, closePoll, disconnect } =
-    useSocketActions();
+  const { startSession, createPoll, closePoll } = useSocketActions();
 
   const userName = useAppSelector(selectUserName);
   const isSessionActive = useAppSelector(selectIsSessionActive);
@@ -42,22 +38,8 @@ export default function TeacherPage() {
   const timeRemaining = useAppSelector(selectTimeRemainingFormatted);
   const results = useAppSelector(selectResultsWithPercentages);
   const allAnswered = useAppSelector(selectAllStudentsAnswered);
-  const isTeacherReplaced = useAppSelector(selectIsTeacherReplaced);
 
   const [isQuestionAsked, setIsQuestionAsked] = useState(false);
-
-  useEffect(() => {
-    const delay = setTimeout(() => {
-      if (isTeacherReplaced) {
-        disconnect();
-        if (window) {
-          window.location.href = '/';
-        }
-      }
-    }, 2000);
-
-    return () => clearTimeout(delay);
-  }, [isTeacherReplaced, disconnect]);
 
   const [question, setQuestion] = useState('');
   const [options, setOptions] = useState(['', '']);
@@ -102,6 +84,12 @@ export default function TeacherPage() {
       timeLimit,
     });
     setIsQuestionAsked(true);
+  };
+
+  const handleSubmitName = () => {
+    if (teacherName.trim()) {
+      startSession('Teacher ' + teacherName.trim());
+    }
   };
 
   /* Input Teacher Name */
@@ -162,10 +150,7 @@ export default function TeacherPage() {
         <div style={{ marginTop: 50 }}>
           <button
             className="w-[233.93px] h-[57.58px] bg-linear-to-r from-[#8f64e1] to-[#1d68bd] rounded-[34px]  font-semibold text-lg leading-[100%] flex justify-center items-center text-white cursor-pointer"
-            onClick={() =>
-              teacherName.trim() &&
-              startSession('Teacher ' + teacherName.trim())
-            }
+            onClick={() => handleSubmitName()}
             disabled={!teacherName.trim()}
           >
             continue

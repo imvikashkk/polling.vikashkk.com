@@ -260,8 +260,6 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({ children }) => {
     // Current state response (for reconnection)
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     socketInstance.on('current-state', (data: any) => {
-      console.log('Current state received');
-
       if (data.hasActiveSession) {
         dispatch(sessionStarted({}));
       }
@@ -291,7 +289,7 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({ children }) => {
 
 /*
 ============================================
-CUSTOM HOOK TO USE SOCKET
+      CUSTOM HOOK TO USE SOCKET
 ============================================ */
 
 export const useSocket = () => {
