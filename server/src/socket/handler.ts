@@ -19,31 +19,32 @@ export const setupSocketHandlers = (io: Server) => {
 
     /* ===============================
        TEACHER → START / OVERRIDE SESSION
-       Ye handler tab call hota hai jab teacher join karta hai.
-       Agar already koi teacher hai, to purane wale ko kick out kar dega.
-       Ye "acquire" behavior hai jo tumne manga tha.
+       This handler calls when teacher joins.
+       If a teacher already exists, it will kick out the old one.
+       This is an acquire behavior.
     =============================== */
 
     socket.on('start-session', ({ name }: { name: string }) => {
-      // Agar already session active hai, to force reset kar do
+      // if session already active then force to reset
+
       if (RoomManager.hasActiveSession()) {
         const oldTeacherSocket = RoomManager.getTeacherSocketId();
 
-        // Purane teacher ko disconnect
+        // Disconnect the old teacher
         if (oldTeacherSocket) {
           io.to(oldTeacherSocket).emit('teacher-replaced', {
             message: 'Another teacher has taken over the session',
           });
         }
 
-        // Session ko end kar ke naya start karna
+        // End the session
         RoomManager.endSession();
-        RoomManager.clearHistory(); // Pahle clear kar lete hai history ko
+        RoomManager.clearHistory(); // Clear history first
         io.to(RoomManager.SESSION_ID).emit('session-ended');
       }
 
-      // Naya session start karo
-      RoomManager.clearHistory(); // Pahle clear kar lete hai history ko
+      // start new session
+      RoomManager.clearHistory(); // Clear history first
       RoomManager.startSession(socket.id, name);
       socket.join(RoomManager.SESSION_ID);
 
@@ -61,9 +62,8 @@ export const setupSocketHandlers = (io: Server) => {
 
     /* ===============================
        STUDENT → JOIN SESSION
-       
-       Student join karta hai to usko room me add karo.
-       Sabko notify karo ki naya student aaya hai.
+       if student join then add to room
+       Notify everyone about new student
     =============================== */
 
     socket.on('join-session', ({ name }: { name: string }) => {
@@ -89,10 +89,10 @@ export const setupSocketHandlers = (io: Server) => {
       RoomManager.addStudent(student);
       socket.join(RoomManager.SESSION_ID);
 
-      // Sabko batao naya student aaya
+      // Notify to all that a new student has joined
       io.to(RoomManager.SESSION_ID).emit('student-joined', student);
 
-      // Is student ko current poll bhejo agar active hai
+      // Send current poll to this student if active
       const currentPoll = RoomManager.getPoll();
       socket.emit('join-success', {
         userId,
@@ -106,22 +106,22 @@ export const setupSocketHandlers = (io: Server) => {
           : null,
       });
 
-      console.log(`🎓 Student joined: ${name}`);
+      console.log(`Student joined: ${name}`);
     });
 
     /* ===============================
-       TEACHER → CREATE POLL
-       
-       Teacher naya poll create karta hai.
-       Rule: Sabhi students ne previous poll ka answer diya ho tabhi naya poll bana sakte.
+      TEACHER → CREATE POLL
+      Teacher creates new poll
+      Rule: If all students have answered previous poll only then create new poll.
     =============================== */
+
     socket.on('create-poll', (data: CreatePollPayload) => {
       if (role !== 'teacher') {
         socket.emit('error', { message: 'Only teacher can create polls' });
         return;
       }
 
-      // Agar active poll hai aur sabhi students ne answer nahi diya
+      // if active poll exists and not all students answered
       if (RoomManager.hasActivePoll()) {
         if (!RoomManager.allStudentsAnswered()) {
           socket.emit('error', {
@@ -131,10 +131,10 @@ export const setupSocketHandlers = (io: Server) => {
         }
       }
 
-      // Sabhi students ke answers reset karo
+      // Reset all students' answers
       RoomManager.resetStudentAnswers();
 
-      // Naya poll create karo
+      // Create new poll
       const poll: Poll = {
         id: uuidv4(),
         question: data.question,
@@ -148,7 +148,7 @@ export const setupSocketHandlers = (io: Server) => {
 
       RoomManager.setPoll(poll);
 
-      // Sabko naya poll bhejo
+      // Send new poll to everyone
       io.to(RoomManager.SESSION_ID).emit('poll-started', {
         pollId: poll.id,
         question: poll.question,
@@ -156,7 +156,7 @@ export const setupSocketHandlers = (io: Server) => {
         timeLimit: poll.timeLimit,
       });
 
-      // Timer start karo
+      // Start timer
       const timer = setInterval(() => {
         const current = RoomManager.getPoll();
         if (!current || !current.isActive) {
@@ -166,13 +166,13 @@ export const setupSocketHandlers = (io: Server) => {
 
         current.timeRemaining -= 1;
 
-        // Har second time update bhejo
+        // Send time update every second
         io.to(RoomManager.SESSION_ID).emit(
           'time-update',
           current.timeRemaining
         );
 
-        // Time khatam ho gaya to poll band kar do
+        // If time is up, close the poll
         if (current.timeRemaining <= 0) {
           clearInterval(timer);
           RoomManager.closePoll();
@@ -183,14 +183,14 @@ export const setupSocketHandlers = (io: Server) => {
       }, 1000);
 
       RoomManager.setPollTimer(timer);
-      console.log(`📊 New poll created: ${poll.question}`);
+      console.log(`New poll created: ${poll.question}`);
     });
 
     /* ===============================
        STUDENT → SUBMIT ANSWER
-       
-       Student apna answer submit karta hai.
-       Ek student ek hi baar answer kar sakta hai.
+
+       Student submits their answer.
+       A student can submit an answer only once.
     =============================== */
     socket.on('submit-answer', (data: SubmitAnswerPayload) => {
       if (role !== 'student' || !userId) {
@@ -207,16 +207,16 @@ export const setupSocketHandlers = (io: Server) => {
         return;
       }
 
-      // Answer submit ho gaya
+      // Answer submitted
       socket.emit('answer-submitted', { success: true });
 
-      // Sabko updated students list bhejo (hasAnswered update hai)
+      // Send updated students list (hasAnswered update)
       io.to(RoomManager.SESSION_ID).emit(
         'students-list',
         RoomManager.getStudents()
       );
 
-      // Real-time results bhejo (teacher ke liye)
+      // Send real-time results (for teacher)
       io.to(RoomManager.SESSION_ID).emit(
         'live-results',
         RoomManager.getResults()
@@ -246,9 +246,7 @@ export const setupSocketHandlers = (io: Server) => {
 
     /* ===============================
        TEACHER → KICK OUT STUDENT
-       
-       Teacher kisi bhi student ko session se nikal sakta hai.
-       Ye feature tumne specifically manga tha.
+       Teacher can kick out any student from the session.
     =============================== */
     socket.on('kick-student', ({ studentId }: { studentId: string }) => {
       if (role !== 'teacher') {
@@ -262,15 +260,15 @@ export const setupSocketHandlers = (io: Server) => {
         return;
       }
 
-      // Student ko kicked message bhejo
+      // Send kicked message to student
       io.to(student.socketId).emit('kicked-out', {
         message: 'You have been removed from the session by the teacher',
       });
 
-      // Student ko remove karo
+      // Remove student
       RoomManager.removeStudent(studentId);
 
-      // Sabko notify karo
+      // Notify everyone
       io.to(RoomManager.SESSION_ID).emit('student-removed', {
         studentId,
         studentName: student.name,
@@ -281,9 +279,8 @@ export const setupSocketHandlers = (io: Server) => {
 
     /* ===============================
        CHAT FUNCTIONALITY
-       
-       Students aur teacher dono chat kar sakte hain.
-       Sabhi messages real-time broadcast honge.
+       Student and Teacher can chat.
+       All messages will be broadcasted in real-time.
     =============================== */
 
     socket.on('send-message', ({ message }: { message: string }) => {
@@ -301,7 +298,7 @@ export const setupSocketHandlers = (io: Server) => {
         timestamp: Date.now(),
       };
 
-      // Sabko message broadcast karo
+      // broadcast message to everyone
       io.to(RoomManager.SESSION_ID).emit('new-message', chatMessage);
 
       console.log(`${role} : ${userName}: ${message}`);
@@ -309,9 +306,9 @@ export const setupSocketHandlers = (io: Server) => {
 
     /* ===============================
        TEACHER → GET POLL HISTORY
-       
-       Teacher past polls dekh sakta hai.
+       Teacher can view past polls.
     =============================== */
+
     socket.on('get-poll-history', () => {
       if (role !== 'teacher') {
         socket.emit('error', { message: 'Only teacher can view history' });
@@ -324,14 +321,14 @@ export const setupSocketHandlers = (io: Server) => {
 
     /* ===============================
        GET CURRENT STATE
+       Student or Teacher 
        
-       Koi bhi current state request kar sakta hai
+       Anyone can request the current state
        (students list, current poll, etc.)
     =============================== */
     socket.on('get-current-state', () => {
       const currentPoll = RoomManager.getPoll();
       const students = RoomManager.getStudents();
-
       socket.emit('current-state', {
         hasActiveSession: RoomManager.hasActiveSession(),
         students,
@@ -348,9 +345,9 @@ export const setupSocketHandlers = (io: Server) => {
 
     /* ===============================
        DISCONNECT
-       Jab koi disconnect hota hai:
-       - Student: list se remove karo
-       - Teacher: poora session end karo
+       When someone disconnects from socket
+       - Student: remove from list
+       - Teacher: end the entire session
     =============================== */
     socket.on('disconnect', () => {
       if (role === 'student' && userId) {

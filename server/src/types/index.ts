@@ -1,39 +1,39 @@
-// Poll Option - har option ki details
+// Poll Option - details of each option in a poll
 export interface PollOption {
   id: string;
   text: string;
   votes: number;
 }
 
-// Teacher jab poll create karta hai to ye data bhejta hai
+// When Teacher creates a poll, this data is sent
 export interface CreatePollPayload {
   question: string;
-  options: Omit<PollOption, 'votes'>[]; // votes nahi bhejte, 0 se start hoga
-  timeLimit: number; // seconds me (max 60 according to requirements)
+  options: Omit<PollOption, 'votes'>[]; // votes are not sent, start from 0
+  timeLimit: number; // in seconds
 }
 
-// Student jab answer submit karta hai
+// When Student submits an answer
 export interface SubmitAnswerPayload {
-  optionId: string; // Kis option ko vote diya
+  optionId: string; // Which option was voted for
 }
 
-// Student ki complete information
+// Student's complete information
 export interface Student {
   id: string;
   name: string;
-  socketId: string; // Socket connection track karne ke liye
-  hasAnswered: boolean; // Current poll me answer diya ya nahi
+  socketId: string; // To track socket connection
+  hasAnswered: boolean; // Whether answered the current poll or not
   joinedAt: number; // Timestamp
 }
 
-// Poll ki complete information
+// Poll's complete information
 export interface Poll {
   id: string;
   question: string;
   options: PollOption[];
   timeLimit: number; // Total time in seconds
   timeRemaining: number; // Remaining time
-  isActive: boolean; // Poll chal raha hai ya band ho gaya
+  isActive: boolean; // Poll is active or closed
   createdAt: number; // Timestamp
   votes: Map<string, string>; // userId → optionId mapping
 }
@@ -48,7 +48,7 @@ export interface ChatMessage {
   timestamp: number;
 }
 
-// Poll History - past polls ka data store karne ke liye
+// Poll History - to store past polls data
 export interface PollHistory {
   pollId: string;
   question: string;
